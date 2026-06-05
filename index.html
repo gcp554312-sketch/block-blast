@@ -1,68 +1,84 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-    <meta charset="UTF-8">
-    <title>Neon Blok Blast - Skorlu</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Ultimate Block Blast Pro</title>
     <style>
-        body { background: #101010; display: flex; flex-direction: column; align-items: center; color: #fff; font-family: sans-serif; }
-        
-        #score-board { font-size: 24px; margin: 20px; color: #00f2ff; text-shadow: 0 0 10px #00f2ff; }
-        
-        #game-board { 
-            display: grid; grid-template-columns: repeat(8, 45px); grid-template-rows: repeat(8, 45px); 
-            gap: 3px; background: #1a1a1a; padding: 5px; border-radius: 8px;
-        }
-
-        .cell { width: 45px; height: 45px; background: #252525; border-radius: 4px; transition: 0.2s; }
-        .filled { box-shadow: 0 0 12px currentColor; border: 1px solid rgba(255,255,255,0.3); }
+        :root { --neon-blue: #00f2ff; --neon-pink: #ff00ff; --bg: #0a0a0a; }
+        body { background: var(--bg); color: white; display: flex; flex-direction: column; align-items: center; font-family: 'Arial', sans-serif; touch-action: none; margin: 0; padding: 10px; }
+        #skor { font-size: 3rem; margin: 15px; color: var(--neon-blue); text-shadow: 0 0 20px var(--neon-blue); }
+        #board { display: grid; grid-template-columns: repeat(8, 35px); grid-template-rows: repeat(8, 35px); gap: 2px; background: #151515; padding: 5px; border: 3px solid #333; border-radius: 8px; }
+        .cell { width: 35px; height: 35px; background: #222; border-radius: 2px; }
+        .filled { background: var(--neon-pink); box-shadow: 0 0 15px var(--neon-pink); animation: pop 0.3s ease; }
+        @keyframes pop { 0% { transform: scale(0.8); } 100% { transform: scale(1); } }
+        #controls { margin-top: 30px; display: flex; gap: 15px; flex-wrap: wrap; justify-content: center; }
+        .block-shape { background: #333; padding: 10px; cursor: pointer; border: 2px solid #555; border-radius: 5px; }
     </style>
 </head>
 <body>
 
-    <div id="score-board">SKOR: 0</div>
-    <div id="game-board"></div>
+    <div id="skor">0</div>
+    <div id="board"></div>
+
+    <div id="controls">
+        <div class="block-shape" onclick="spawnBlock('L')">L BLOK</div>
+        <div class="block-shape" onclick="spawnBlock('I')">I BLOK</div>
+        <div class="block-shape" onclick="spawnBlock('KARE')">KARE</div>
+        <div class="block-shape" onclick="spawnBlock('DIK')">DİKDÖRTGEN</div>
+        <div class="block-shape" onclick="spawnBlock('TEK')">TEKLİ</div>
+    </div>
 
 <script>
-    const board = document.getElementById('game-board');
-    const scoreElement = document.getElementById('score-board');
     let score = 0;
+    const board = document.getElementById('board');
+    const cells = [];
 
-    // 8x8 Izgarayı oluştur
+    // Tahta kurulumu
     for (let i = 0; i < 64; i++) {
         const cell = document.createElement('div');
-        cell.classList.add('cell');
+        cell.className = 'cell';
+        cell.onclick = () => placeBlock(i, currentType);
         board.appendChild(cell);
+        cells.push(cell);
     }
 
-    const cells = document.querySelectorAll('.cell');
+    let currentType = 'L';
+    function spawnBlock(type) { currentType = type; alert(type + " seçildi! Şimdi tahtaya tıkla."); }
 
-    // Blok yerleştirme ve puanlama fonksiyonu
-    function placeBlock(shape, color, startPos) {
-        let placedSquares = 0;
-        
-        shape.forEach(index => {
-            const pos = index + startPos;
-            if (cells[pos] && !cells[pos].classList.contains('filled')) {
-                cells[pos].classList.add('filled');
-                cells[pos].style.color = color; // Neon rengini uygula
-                cells[pos].style.backgroundColor = color;
-                placedSquares++;
-            }
-        });
+    function placeBlock(index, type) {
+        let coords = [];
+        if (type === 'L') coords = [0, 8, 16, 17];
+        else if (type === 'I') coords = [0, 8, 16, 24];
+        else if (type === 'KARE') coords = [0, 1, 8, 9];
+        else if (type === 'DIK') coords = [0, 1, 2];
+        else coords = [0];
 
-        // Puan Güncelleme: Her yerleştirilen kare için 10 puan
-        score += (placedSquares * 10);
+        // Yerleştirme kontrolü
+        let canPlace = coords.every(c => cells[index + c] && !cells[index + c].classList.contains('filled'));
         
-        // Eğer satır/sütun temizleme mantığı eklersen buraya bonus eklenebilir
-        if (placedSquares > 0) {
-            scoreElement.innerText = `SKOR: ${score}`;
+        if (canPlace) {
+            coords.forEach(c => {
+                cells[index + c].classList.add('filled');
+            });
+            
+            // Dinamik Puanlama
+            let bonus = Math.floor(Math.random() * 10) + 5; 
+            score += (coords.length * bonus);
+            document.getElementById('skor').innerText = score;
+            checkLines();
         }
     }
 
-    // Örnek Hamleler (Oyun başladığında yerleşen parçalar)
-    placeBlock([0, 1, 2], '#00f2ff', 10); // Mavi Çizgi (30 puan)
-    placeBlock([0, 8, 16], '#ff9f43', 20); // Turuncu L (30 puan)
-    
+    function checkLines() {
+        for (let r = 0; r < 8; r++) {
+            let row = cells.slice(r * 8, r * 8 + 8);
+            if (row.every(c => c.classList.contains('filled'))) {
+                row.forEach(c => c.classList.remove('filled'));
+                score += 500; // Büyük satır patlatma bonusu
+                document.getElementById('skor').innerText = score;
+            }
+        }
+    }
 </script>
 </body>
 </html>
