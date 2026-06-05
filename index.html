@@ -1,84 +1,90 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Ultimate Block Blast Pro</title>
+    <title>Neon Blast</title>
     <style>
-        :root { --neon-blue: #00f2ff; --neon-pink: #ff00ff; --bg: #0a0a0a; }
-        body { background: var(--bg); color: white; display: flex; flex-direction: column; align-items: center; font-family: 'Arial', sans-serif; touch-action: none; margin: 0; padding: 10px; }
-        #skor { font-size: 3rem; margin: 15px; color: var(--neon-blue); text-shadow: 0 0 20px var(--neon-blue); }
-        #board { display: grid; grid-template-columns: repeat(8, 35px); grid-template-rows: repeat(8, 35px); gap: 2px; background: #151515; padding: 5px; border: 3px solid #333; border-radius: 8px; }
-        .cell { width: 35px; height: 35px; background: #222; border-radius: 2px; }
-        .filled { background: var(--neon-pink); box-shadow: 0 0 15px var(--neon-pink); animation: pop 0.3s ease; }
-        @keyframes pop { 0% { transform: scale(0.8); } 100% { transform: scale(1); } }
-        #controls { margin-top: 30px; display: flex; gap: 15px; flex-wrap: wrap; justify-content: center; }
-        .block-shape { background: #333; padding: 10px; cursor: pointer; border: 2px solid #555; border-radius: 5px; }
+        body { background: #050505; color: #fff; display: flex; flex-direction: column; align-items: center; font-family: sans-serif; touch-action: none; margin: 0; padding-top: 10px; }
+        #skor { font-size: 2.5rem; margin-bottom: 10px; color: #00f2ff; text-shadow: 0 0 10px #00f2ff; }
+        #board { display: grid; grid-template-columns: repeat(8, 38px); grid-template-rows: repeat(8, 38px); gap: 2px; background: #1a1a1a; padding: 5px; border-radius: 8px; border: 2px solid #333; }
+        .cell { width: 38px; height: 38px; background: #222; border-radius: 4px; }
+        .filled { background: #ff00ff; box-shadow: 0 0 10px #ff00ff; }
+        #shelf { display: flex; justify-content: center; gap: 20px; margin-top: 30px; width: 100%; }
+        .mini-piece { display: grid; gap: 2px; padding: 10px; cursor: pointer; }
+        .m-cell { width: 15px; height: 15px; background: #ff00ff; border-radius: 2px; }
     </style>
 </head>
 <body>
 
     <div id="skor">0</div>
     <div id="board"></div>
-
-    <div id="controls">
-        <div class="block-shape" onclick="spawnBlock('L')">L BLOK</div>
-        <div class="block-shape" onclick="spawnBlock('I')">I BLOK</div>
-        <div class="block-shape" onclick="spawnBlock('KARE')">KARE</div>
-        <div class="block-shape" onclick="spawnBlock('DIK')">DİKDÖRTGEN</div>
-        <div class="block-shape" onclick="spawnBlock('TEK')">TEKLİ</div>
+    <div id="shelf">
+        <div class="mini-piece" id="p1" onclick="selectPiece('p1')"></div>
+        <div class="mini-piece" id="p2" onclick="selectPiece('p2')"></div>
+        <div class="mini-piece" id="p3" onclick="selectPiece('p3')"></div>
     </div>
 
 <script>
     let score = 0;
+    let selectedShape = null;
+    let selectedEl = null;
     const board = document.getElementById('board');
     const cells = [];
+    const shapes = [
+        [[0,8,16,17], "2x3"], [[0,8,16,24], "4x1"], [[0,1,8,9], "2x2"], [[0,1,2], "1x3"], [[0], "1x1"]
+    ];
 
-    // Tahta kurulumu
-    for (let i = 0; i < 64; i++) {
-        const cell = document.createElement('div');
-        cell.className = 'cell';
-        cell.onclick = () => placeBlock(i, currentType);
-        board.appendChild(cell);
-        cells.push(cell);
+    for(let i=0; i<64; i++) {
+        const c = document.createElement('div');
+        c.className = 'cell';
+        c.onclick = () => drop(i);
+        board.appendChild(c);
+        cells.push(c);
     }
 
-    let currentType = 'L';
-    function spawnBlock(type) { currentType = type; alert(type + " seçildi! Şimdi tahtaya tıkla."); }
+    function createPiece(id) {
+        const el = document.getElementById(id);
+        const rand = shapes[Math.floor(Math.random() * shapes.length)];
+        el.dataset.shape = JSON.stringify(rand[0]);
+        el.innerHTML = '';
+        rand[0].forEach(() => {
+            const m = document.createElement('div');
+            m.className = 'm-cell';
+            el.appendChild(m);
+        });
+        el.style.gridTemplateColumns = rand[1].includes('2x2') ? "repeat(2, 15px)" : "repeat(3, 15px)";
+    }
 
-    function placeBlock(index, type) {
-        let coords = [];
-        if (type === 'L') coords = [0, 8, 16, 17];
-        else if (type === 'I') coords = [0, 8, 16, 24];
-        else if (type === 'KARE') coords = [0, 1, 8, 9];
-        else if (type === 'DIK') coords = [0, 1, 2];
-        else coords = [0];
+    function selectPiece(id) {
+        selectedShape = JSON.parse(document.getElementById(id).dataset.shape);
+        selectedEl = id;
+    }
 
-        // Yerleştirme kontrolü
-        let canPlace = coords.every(c => cells[index + c] && !cells[index + c].classList.contains('filled'));
-        
-        if (canPlace) {
-            coords.forEach(c => {
-                cells[index + c].classList.add('filled');
-            });
-            
-            // Dinamik Puanlama
-            let bonus = Math.floor(Math.random() * 10) + 5; 
-            score += (coords.length * bonus);
-            document.getElementById('skor').innerText = score;
-            checkLines();
-        }
+    function drop(index) {
+        if(!selectedShape) return;
+        selectedShape.forEach(s => {
+            if(cells[index + s]) cells[index + s].classList.add('filled');
+        });
+        score += 5;
+        document.getElementById('skor').innerText = score;
+        createPiece(selectedEl);
+        selectedShape = null;
+        checkLines();
     }
 
     function checkLines() {
-        for (let r = 0; r < 8; r++) {
-            let row = cells.slice(r * 8, r * 8 + 8);
-            if (row.every(c => c.classList.contains('filled'))) {
+        for(let r=0; r<8; r++) {
+            let row = cells.slice(r*8, r*8+8);
+            if(row.every(c => c.classList.contains('filled'))) {
                 row.forEach(c => c.classList.remove('filled'));
-                score += 500; // Büyük satır patlatma bonusu
+                score += 500;
                 document.getElementById('skor').innerText = score;
             }
         }
     }
+
+    createPiece('p1'); createPiece('p2'); createPiece('p3');
 </script>
 </body>
 </html>
