@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>Neon Blok Blast - Skorlu</title>
+    <style>
+        body { background: #101010; display: flex; flex-direction: column; align-items: center; color: #fff; font-family: sans-serif; }
+        
+        #score-board { font-size: 24px; margin: 20px; color: #00f2ff; text-shadow: 0 0 10px #00f2ff; }
+        
+        #game-board { 
+            display: grid; grid-template-columns: repeat(8, 45px); grid-template-rows: repeat(8, 45px); 
+            gap: 3px; background: #1a1a1a; padding: 5px; border-radius: 8px;
+        }
+
+        .cell { width: 45px; height: 45px; background: #252525; border-radius: 4px; transition: 0.2s; }
+        .filled { box-shadow: 0 0 12px currentColor; border: 1px solid rgba(255,255,255,0.3); }
+    </style>
+</head>
+<body>
+
+    <div id="score-board">SKOR: 0</div>
+    <div id="game-board"></div>
+
+<script>
+    const board = document.getElementById('game-board');
+    const scoreElement = document.getElementById('score-board');
+    let score = 0;
+
+    // 8x8 Izgarayı oluştur
+    for (let i = 0; i < 64; i++) {
+        const cell = document.createElement('div');
+        cell.classList.add('cell');
+        board.appendChild(cell);
+    }
+
+    const cells = document.querySelectorAll('.cell');
+
+    // Blok yerleştirme ve puanlama fonksiyonu
+    function placeBlock(shape, color, startPos) {
+        let placedSquares = 0;
+        
+        shape.forEach(index => {
+            const pos = index + startPos;
+            if (cells[pos] && !cells[pos].classList.contains('filled')) {
+                cells[pos].classList.add('filled');
+                cells[pos].style.color = color; // Neon rengini uygula
+                cells[pos].style.backgroundColor = color;
+                placedSquares++;
+            }
+        });
+
+        // Puan Güncelleme: Her yerleştirilen kare için 10 puan
+        score += (placedSquares * 10);
+        
+        // Eğer satır/sütun temizleme mantığı eklersen buraya bonus eklenebilir
+        if (placedSquares > 0) {
+            scoreElement.innerText = `SKOR: ${score}`;
+        }
+    }
+
+    // Örnek Hamleler (Oyun başladığında yerleşen parçalar)
+    placeBlock([0, 1, 2], '#00f2ff', 10); // Mavi Çizgi (30 puan)
+    placeBlock([0, 8, 16], '#ff9f43', 20); // Turuncu L (30 puan)
+    
+</script>
+</body>
+</html>
